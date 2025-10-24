@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x402 Uitleg - Simpel & Duidelijk</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .slide {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            margin: 30px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #764ba2;
+            font-size: 2em;
+            margin: 30px 0 20px 0;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin: 20px 0 10px 0;
+        }
+
+        p {
+            font-size: 1.2em;
+            margin: 15px 0;
+            color: #555;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #ffd89b 0%, #19547b 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .box {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+
+        .example {
+            background: #e3f2fd;
+            border: 2px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-family: monospace;
+        }
+
+        .step {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .step h3 {
+            color: white;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .step p {
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .comparison-item {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .old-way {
+            background: #ffebee;
+            border: 2px solid #f44336;
+        }
+
+        .new-way {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+        }
+
+        .emoji {
+            font-size: 3em;
+            margin: 10px 0;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .pros {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #4caf50;
+        }
+
+        .cons {
+            background: #fff3e0;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #ff9800;
+        }
+
+        ul {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        li {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .code {
+            background: #263238;
+            color: #aed581;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .visual-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .flow-item {
+            text-align: center;
+            padding: 20px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .flow-arrow {
+            font-size: 3em;
+            color: #667eea;
+        }
+
+        .icon-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 50%;
+            font-size: 3em;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px auto;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .price-tag {
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        @media (max-width: 768px) {
+            .slide {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- SLIDE 1: Titel -->
+        <div class="slide">
+            <h1>🚀 x402 Uitleg</h1>
+            <p style="text-align: center; font-size: 1.5em; color: #764ba2;">
+                Cryptocurrency betalingen voor het internet - <strong>Super Simpel Uitgelegd</strong>
+            </p>
+            <div class="emoji" style="text-align: center;">💳 ➡️ 🌐 ➡️ 💰</div>
+        </div>
+
+        <!-- SLIDE 2: Het Probleem -->
+        <div class="slide">
+            <h2>😫 Het Probleem (Voordat x402 bestond)</h2>
+
+            <div class="box">
+                <h3>Stel je voor...</h3>
+                <p>Je hebt een API (een dienst op het internet) en wil dat mensen betalen om deze te gebruiken.</p>
+            </div>
+
+            <div class="comparison">
+                <div class="comparison-item old-way">
+                    <div class="emoji">😤</div>
+                    <h3>Oude Manier</h3>
+                    <ul style="text-align: left;">
+                        <li>Stripe/PayPal integreren</li>
+                        <li>Account systeem bouwen</li>
+                        <li>Email verificatie</li>
+                        <li>Wachtwoorden beheren</li>
+                        <li>Betaal 3-5% fees!</li>
+                        <li>Wachten op geld (2+ dagen)</li>
+                    </ul>
+                </div>
+
+                <div class="comparison-item new-way">
+                    <div class="emoji">😍</div>
+                    <h3>Met x402</h3>
+                    <ul style="text-align: left;">
+                        <li>1 regel code</li>
+                        <li>Geen accounts nodig</li>
+                        <li>Geen emails</li>
+                        <li>0% fees</li>
+                        <li>Geld binnen 2 seconden!</li>
+                        <li>Super simpel!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Wat is x402? -->
+        <div class="slide">
+            <h2>🤔 Wat is x402 PRECIES?</h2>
+
+            <p class="highlight" style="text-align: center; font-size: 1.5em;">
+                x402 = Een manier om INSTANT te betalen voor dingen op het internet met cryptocurrency
+            </p>
+
+            <div class="box">
+                <h3>In menselijke taal:</h3>
+                <p style="font-size: 1.3em;">
+                    <strong>x402</strong> is alsof je een <strong>muntje in een automaat gooit</strong> voordat je een dienst krijgt.
+                    Maar dan digitaal, met crypto, en instant!
+                </p>
+            </div>
+
+            <div class="visual-flow">
+                <div class="flow-item">
+                    <div class="icon-box">🤖</div>
+                    <p><strong>AI Agent/User</strong><br>Wil API gebruiken</p>
+                </div>
+                <div class="flow-arrow">➡️</div>
+                <div class="flow-item">
+                    <div class="icon-box">🚫</div>
+                    <p><strong>Server zegt:</strong><br>"402 - Betaal €0.10"</p>
+                </div>
+                <div class="flow-arrow">➡️</div>
+                <div class="flow-item">
+                    <div class="icon-box">💳</div>
+                    <p><strong>Betaalt automatisch</strong><br>Via crypto wallet</p>
+                </div>
+                <div class="flow-arrow">➡️</div>
+                <div class="flow-item">
+                    <div class="icon-box">✅</div>
+                    <p><strong>Krijgt data</strong><br>Binnen 2 seconden!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Hoe werkt het? -->
+        <div class="slide">
+            <h2>⚙️ Hoe werkt het? (Stap voor stap)</h2>
+
+            <div class="step">
+                <h3>Stap 1: Request zonder betaling</h3>
+                <p>Een gebruiker (of AI agent) probeert jouw API te gebruiken</p>
+                <div class="code">
+GET /api/premium-data
+Host: jouw-api.com
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Stap 2: Server vraagt om betaling</h3>
+                <p>Jouw server antwoordt: "Hey, je moet eerst betalen!"</p>
+                <div class="code">
+HTTP/1.1 402 Payment Required
+
+{
+  "message": "Betaling vereist",
+  "amount": 0.10,
+  "currency": "USDC",
+  "wallet": "0xJouwWalletAdres"
+}
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Stap 3: Automatische betaling</h3>
+                <p>De wallet van de gebruiker betaalt automatisch €0.10 in USDC</p>
+                <div class="code">
+// Wallet stuurt USDC naar jouw wallet
+Transaction: 0x123abc...
+Amount: $0.10 USDC
+To: 0xJouwWallet
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Stap 4: Request opnieuw met bewijs</h3>
+                <p>Gebruiker probeert opnieuw, maar nu MET betalingsbewijs</p>
+                <div class="code">
+GET /api/premium-data
+X-Payment-Proof: signature123...
+X-Payment-Amount: 0.10
+X-Payment-Tx: 0x123abc...
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Stap 5: Data ontvangen!</h3>
+                <p>Server checkt betaling, en geeft data terug</p>
+                <div class="code">
+HTTP/1.1 200 OK
+
+{
+  "data": "Hier is je premium data!"
+}
+                </div>
+            </div>
+
+            <div class="success">
+                <h3 style="color: #28a745;">✅ Klaar!</h3>
+                <p style="color: #155724; font-size: 1.2em;">
+                    Het geld staat binnen 2 seconden in jouw wallet. Geen tussenpartij, geen fees, geen gedoe!
+                </p>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Waarom x402? -->
+        <div class="slide">
+            <h2>💎 Waarom zou je x402 gebruiken?</h2>
+
+            <div class="pros-cons">
+                <div class="pros">
+                    <h3 style="color: #4caf50;">✅ Voordelen</h3>
+                    <ul>
+                        <li><strong>0% Fees</strong> - Geen Stripe/PayPal commissies</li>
+                        <li><strong>Instant geld</strong> - Binnen 2 seconden in je wallet</li>
+                        <li><strong>Geen accounts</strong> - Gebruikers hoeven niet te registreren</li>
+                        <li><strong>Micropayments mogelijk</strong> - €0.001 is geen probleem</li>
+                        <li><strong>AI Agents friendly</strong> - Agents kunnen autonoom betalen</li>
+                        <li><strong>Wereldwijd</strong> - Geen geografische beperkingen</li>
+                        <li><strong>Privacy</strong> - Geen persoonlijke info nodig</li>
+                    </ul>
+                </div>
+
+                <div class="cons">
+                    <h3 style="color: #ff9800;">⚠️ Let op!</h3>
+                    <ul>
+                        <li><strong>Crypto wallet nodig</strong> - Niet iedereen heeft dit</li>
+                        <li><strong>Nog nieuw</strong> - Niet veel mensen kennen het</li>
+                        <li><strong>Geen chargebacks</strong> - Betaling is permanent</li>
+                        <li><strong>Tech-savvy users</strong> - Moet crypto snappen</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: Voor wie is het? -->
+        <div class="slide">
+            <h2>👥 Voor wie is x402 PERFECT?</h2>
+
+            <div class="example">
+                <h3>✅ Gebruik x402 als je...</h3>
+                <ul>
+                    <li>🤖 Een API bouwt voor <strong>AI agents</strong></li>
+                    <li>💰 <strong>Micropayments</strong> wilt accepteren (€0.001 - €1.00)</li>
+                    <li>🚀 <strong>Geen gedoe</strong> wilt met accounts en registraties</li>
+                    <li>🌍 <strong>Internationale klanten</strong> hebt</li>
+                    <li>⚡ <strong>Instant settlement</strong> nodig hebt</li>
+                    <li>🔧 <strong>Tech-savvy gebruikers</strong> hebt die crypto kennen</li>
+                </ul>
+            </div>
+
+            <div class="warning">
+                <h3>❌ Gebruik x402 NIET als...</h3>
+                <ul>
+                    <li>Je klanten zijn normale consumenten zonder crypto kennis</li>
+                    <li>Je grote bedragen factureert (>€100)</li>
+                    <li>Je chargebacks/terugbetalingen moet ondersteunen</li>
+                    <li>Je moet voldoen aan strikte KYC/AML regels</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: Praktisch Voorbeeld -->
+        <div class="slide">
+            <h2>📝 Praktisch Voorbeeld: Multi-Agent Dashboard</h2>
+
+            <div class="box">
+                <h3>Scenario: Premium Analytics Feature</h3>
+                <p>Je wilt dat mensen betalen voor geavanceerde analytics in je dashboard.</p>
+            </div>
+
+            <h3>Stap 1: Voeg 1 regel code toe</h3>
+            <div class="code">
+const x402 = require('x402-middleware');
+
+app.use(x402.paymentMiddleware("0xJouwWallet", {
+  "/api/analytics/advanced": "$0.10"
+}));
+            </div>
+
+            <h3>Stap 2: Configureer je wallet</h3>
+            <div class="code">
+# In .env bestand
+X402_ENABLED=true
+X402_WALLET_ADDRESS=0xJouwWalletAdresHier
+X402_CURRENCY=USDC
+            </div>
+
+            <h3>Stap 3: Klaar! 🎉</h3>
+            <div class="success">
+                <p style="color: #155724; font-size: 1.2em;">
+                    Nu moet iedereen die <code>/api/analytics/advanced</code> wil gebruiken eerst €0.10 betalen!
+                    Het geld komt binnen 2 seconden in je wallet binnen.
+                </p>
+            </div>
+
+            <h3>Wat gebeurt er nu?</h3>
+            <div class="visual-flow">
+                <div class="flow-item">
+                    <p><strong>User maakt request</strong></p>
+                    <p style="font-family: monospace; font-size: 0.9em;">GET /api/analytics/advanced</p>
+                </div>
+                <div class="flow-arrow">➡️</div>
+                <div class="flow-item">
+                    <p><strong>Server: 402!</strong></p>
+                    <p style="color: #f44336;">Betaal €0.10 in USDC</p>
+                </div>
+                <div class="flow-arrow">➡️</div>
+                <div class="flow-item">
+                    <p><strong>Wallet betaalt auto</strong></p>
+                    <p style="color: #4caf50;">€0.10 USDC verzonden</p>
+                </div>
+                <div class="flow-arrow">➡️</div>
+                <div class="flow-item">
+                    <p><strong>Data ontvangen</strong></p>
+                    <p style="color: #4caf50;">✅ Analytics data!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: Pricing Voorbeelden -->
+        <div class="slide">
+            <h2>💵 Pricing Voorbeelden</h2>
+
+            <p style="font-size: 1.2em; margin-bottom: 20px;">
+                Wat zou je kunnen vragen voor verschillende diensten?
+            </p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Dienst</th>
+                            <th>Prijs</th>
+                            <th>Wanneer gebruiken?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Real-time data stream</strong></td>
+                            <td><span class="price-tag">$0.001</span></td>
+                            <td>Per event/update</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI API call</strong></td>
+                            <td><span class="price-tag">$0.01</span></td>
+                            <td>Per inference request</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Premium analytics</strong></td>
+                            <td><span class="price-tag">$0.10</span></td>
+                            <td>Per dashboard view</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI Code Review</strong></td>
+                            <td><span class="price-tag">$0.50</span></td>
+                            <td>Per review sessie</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Deployment dienst</strong></td>
+                            <td><span class="price-tag">$1.00</span></td>
+                            <td>Per deployment</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="box">
+                <h3>💡 Pro Tip</h3>
+                <p>Met x402 kun je <strong>micropayments</strong> doen die ONMOGELIJK zijn met creditcards.
+                Stripe/PayPal vragen minimaal €0.30 per transactie, dus €0.001 betalen zou nooit werken!</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 9: Agent-to-Agent Betalingen -->
+        <div class="slide">
+            <h2>🤖 Het KILLER Feature: Agent-to-Agent Betalingen</h2>
+
+            <div class="box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h3 style="color: white;">Dit is waar x402 echt schittert!</h3>
+                <p style="color: white; font-size: 1.2em;">
+                    AI agents kunnen elkaar AUTOMATISCH betalen voor diensten, zonder menselijke tussenkomst!
+                </p>
+            </div>
+
+            <h3>Scenario: AI Agent Marketplace</h3>
+
+            <div class="visual-flow" style="flex-direction: column; gap: 20px;">
+                <div class="step" style="width: 100%;">
+                    <p><strong>Agent A:</strong> "Ik moet mijn code laten reviewen"</p>
+                    <p style="font-family: monospace; margin-top: 10px;">
+                        POST /api/agent/code-review<br>
+                        Code: [1000 lines of code]
+                    </p>
+                </div>
+
+                <div class="flow-arrow" style="transform: rotate(90deg);">➡️</div>
+
+                <div class="step" style="width: 100%;">
+                    <p><strong>Server:</strong> "Dat kost €0.50 in USDC"</p>
+                    <p style="font-family: monospace; margin-top: 10px;">
+                        HTTP 402 Payment Required<br>
+                        Amount: $0.50 USDC
+                    </p>
+                </div>
+
+                <div class="flow-arrow" style="transform: rotate(90deg);">➡️</div>
+
+                <div class="step" style="width: 100%;">
+                    <p><strong>Agent A Wallet:</strong> "Oké, ik betaal automatisch"</p>
+                    <p style="font-family: monospace; margin-top: 10px;">
+                        Sending $0.50 USDC...<br>
+                        Transaction: 0x123abc...
+                    </p>
+                </div>
+
+                <div class="flow-arrow" style="transform: rotate(90deg);">➡️</div>
+
+                <div class="step" style="width: 100%;">
+                    <p><strong>Agent B (Code Reviewer):</strong> "Ik review de code"</p>
+                    <p style="font-family: monospace; margin-top: 10px;">
+                        [Performs code review]<br>
+                        Returns: Review report
+                    </p>
+                </div>
+
+                <div class="flow-arrow" style="transform: rotate(90deg);">➡️</div>
+
+                <div class="step" style="width: 100%; background: #4caf50;">
+                    <p><strong>Geld verdeeld:</strong></p>
+                    <p style="margin-top: 10px;">
+                        💰 €0.40 → Agent B (de reviewer)<br>
+                        💰 €0.10 → Platform owner (jij!)
+                    </p>
+                </div>
+            </div>
+
+            <div class="success" style="margin-top: 30px;">
+                <h3 style="color: #28a745;">🚀 Dit gebeurt ALLEMAAL automatisch!</h3>
+                <p style="color: #155724; font-size: 1.2em;">
+                    Geen accounts, geen credit cards, geen emails, geen menselijke tussenkomst!<br>
+                    <strong>Agents transacteren autonoom met elkaar!</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- SLIDE 10: Vergelijking met andere systemen -->
+        <div class="slide">
+            <h2>⚖️ Vergelijking: x402 vs Traditionele Betalingen</h2>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th style="background: #4caf50;">x402</th>
+                            <th style="background: #f44336;">Stripe/PayPal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Transaction Fees</strong></td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">0%</td>
+                            <td style="background: #ffebee; color: #c62828;">2.9% + €0.25</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Settlement Time</strong></td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">2 seconden</td>
+                            <td style="background: #ffebee; color: #c62828;">2-7 dagen</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Account Registratie</strong></td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">Niet nodig</td>
+                            <td style="background: #ffebee; color: #c62828;">Verplicht</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Micropayments</strong></td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">Vanaf €0.001</td>
+                            <td style="background: #ffebee; color: #c62828;">Niet economisch</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI Agent Friendly</strong></td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">Perfect!</td>
+                            <td style="background: #ffebee; color: #c62828;">Complex</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Internationale betalingen</strong></td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">Geen probleem</td>
+                            <td style="background: #fff9c4; color: #f57f17;">Mogelijk, maar duur</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Privacy</strong></td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">Hoog (geen persoonlijke info)</td>
+                            <td style="background: #ffebee; color: #c62828;">Laag (veel data nodig)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chargebacks</strong></td>
+                            <td style="background: #ffebee; color: #c62828;">Niet mogelijk</td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">Mogelijk</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Setup Complexiteit</strong></td>
+                            <td style="background: #e8f5e9; color: #2e7d32; font-weight: bold;">1 regel code</td>
+                            <td style="background: #fff9c4; color: #f57f17;">Meerdere dagen integratie</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SLIDE 11: Hoe te starten -->
+        <div class="slide">
+            <h2>🚀 Hoe begin je met x402?</h2>
+
+            <div class="step">
+                <h3>Stap 1: Krijg een Crypto Wallet</h3>
+                <p>Download een wallet zoals:</p>
+                <ul style="color: white; margin-left: 20px; margin-top: 10px;">
+                    <li><strong>MetaMask</strong> (browser extensie)</li>
+                    <li><strong>Coinbase Wallet</strong> (app + browser)</li>
+                    <li><strong>Rainbow Wallet</strong> (mobile)</li>
+                </ul>
+            </div>
+
+            <div class="step">
+                <h3>Stap 2: Installeer x402 Package</h3>
+                <div class="code">
+npm install x402
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Stap 3: Configureer je Wallet Address</h3>
+                <div class="code">
+# In .env bestand
+X402_ENABLED=true
+X402_WALLET_ADDRESS=0xJouwWalletAdresHier
+X402_NETWORK=base
+X402_CURRENCY=USDC
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Stap 4: Voeg Middleware Toe</h3>
+                <div class="code">
+const { x402Middleware } = require('./middleware/x402-payment');
+
+app.use(x402Middleware);
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Stap 5: Configureer Prijzen</h3>
+                <div class="code">
+const PRICING = {
+  '/api/premium-feature': 0.10,
+  '/api/analytics': 0.05,
+  '/api/export': 0.25
+};
+                </div>
+            </div>
+
+            <div class="success">
+                <h3 style="color: #28a745;">✅ Klaar! Je accepteert nu crypto payments!</h3>
+                <p style="color: #155724; font-size: 1.2em;">
+                    Elke keer dat iemand je premium endpoints gebruikt, krijg je binnen 2 seconden geld in je wallet!
+                </p>
+            </div>
+        </div>
+
+        <!-- SLIDE 12: Voor jouw Multi-Agent Dashboard -->
+        <div class="slide">
+            <h2>🎯 Voor Jouw Multi-Agent Dashboard</h2>
+
+            <div class="box">
+                <p style="font-size: 1.2em;">
+                    Ik heb x402 al <strong>voorbereid</strong> in je project! Het is standaard <strong>uitgeschakeld</strong>,
+                    maar je kunt het instant activeren wanneer je het nodig hebt.
+                </p>
+            </div>
+
+            <h3>Wat kun je ermee doen?</h3>
+
+            <div class="example">
+                <h4>💡 Optie 1: Premium Dashboard Features</h4>
+                <div class="code">
+'/api/analytics/advanced': $0.10
+'/api/historical-data': $0.05
+'/api/export-full-report': $0.25
+                </div>
+            </div>
+
+            <div class="example">
+                <h4>🤖 Optie 2: Agent Marketplace</h4>
+                <div class="code">
+'/api/agent/code-review': $0.50
+'/api/agent/testing': $0.25
+'/api/agent/deployment': $1.00
+                </div>
+                <p style="margin-top: 10px; color: #667eea; font-weight: bold;">
+                    ⭐ DIT is het killer feature! Agents betalen elkaar voor werk!
+                </p>
+            </div>
+
+            <div class="example">
+                <h4>⚡ Optie 3: Real-time Micropayments</h4>
+                <div class="code">
+'/api/events/stream': $0.001 per event
+'/api/realtime/updates': $0.001 per update
+                </div>
+            </div>
+
+            <div class="warning">
+                <h3>⚠️ Mijn Advies</h3>
+                <p style="font-size: 1.1em;">
+                    <strong>NU:</strong> Laat het uitgeschakeld. Focus op het bouwen van je dashboard en het krijgen van gebruikers.<br><br>
+                    <strong>LATER:</strong> Als je 1000+ gebruikers hebt en een agent marketplace wilt bouwen,
+                    activeer x402 en start met monetizen!
+                </p>
+            </div>
+        </div>
+
+        <!-- SLIDE 13: Samenvatting -->
+        <div class="slide">
+            <h2>📝 Samenvatting: x402 in 1 Minuut</h2>
+
+            <div class="box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px;">
+                <h3 style="color: white; font-size: 2em; margin-bottom: 20px;">Wat is x402?</h3>
+                <p style="color: white; font-size: 1.3em; line-height: 1.8;">
+                    Een <strong>super simpele manier</strong> om instant cryptocurrency betalingen te accepteren voor je API of website,
+                    zonder accounts, zonder fees, en binnen 2 seconden settled.
+                </p>
+            </div>
+
+            <h3 style="margin-top: 30px;">De Kernpunten:</h3>
+
+            <div class="pros-cons">
+                <div>
+                    <div class="icon-box" style="margin: 20px auto;">💎</div>
+                    <ul>
+                        <li>✅ <strong>0% fees</strong></li>
+                        <li>✅ <strong>2 seconden</strong> settlement</li>
+                        <li>✅ <strong>1 regel code</strong> om te integreren</li>
+                        <li>✅ <strong>Geen accounts</strong> nodig</li>
+                        <li>✅ <strong>Perfect voor AI agents</strong></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="icon-box" style="margin: 20px auto;">⚡</div>
+                    <ul>
+                        <li>🎯 Micropayments mogelijk</li>
+                        <li>🎯 Wereldwijd werken</li>
+                        <li>🎯 Privacy-friendly</li>
+                        <li>🎯 Blockchain agnostic</li>
+                        <li>🎯 Open standaard</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="success" style="margin-top: 30px; padding: 30px;">
+                <h3 style="color: #28a745; font-size: 1.8em;">🚀 Perfecte Timing!</h3>
+                <p style="color: #155724; font-size: 1.3em; line-height: 1.8;">
+                    We staan aan het begin van de <strong>AI economy</strong> waar agents autonoom met elkaar transacteren.
+                    x402 maakt dit mogelijk! Als je nu al bouwt voor AI agents, ben je vroeg bij de partij! 🎉
+                </p>
+            </div>
+        </div>
+
+        <!-- SLIDE 14: Resources -->
+        <div class="slide">
+            <h2>📚 Meer Leren Over x402</h2>
+
+            <div class="box">
+                <h3>🌐 Officiële Resources</h3>
+                <ul>
+                    <li>Website: <a href="https://www.x402.org/" target="_blank">www.x402.org</a></li>
+                    <li>Whitepaper: <a href="https://www.x402.org/x402-whitepaper.pdf" target="_blank">x402-whitepaper.pdf</a></li>
+                    <li>GitHub: <a href="https://github.com/coinbase/x402" target="_blank">github.com/coinbase/x402</a></li>
+                    <li>Documentatie: <a href="https://x402.gitbook.io/x402" target="_blank">x402.gitbook.io</a></li>
+                </ul>
+            </div>
+
+            <div class="box">
+                <h3>📂 In Jouw Project</h3>
+                <ul>
+                    <li><code>apps/server/middleware/x402-payment.js</code> - De middleware</li>
+                    <li><code>apps/server/x402-integration-guide.md</code> - Setup guide (Nederlands)</li>
+                    <li><code>apps/server/middleware/x402-client-example.js</code> - Client voorbeelden</li>
+                </ul>
+            </div>
+
+            <div class="box">
+                <h3>💬 Vragen?</h3>
+                <p style="font-size: 1.1em;">
+                    Als je vragen hebt over x402 of hoe je het in je project kunt gebruiken,
+                    vraag het gewoon! Ik help je graag verder. 🚀
+                </p>
+            </div>
+        </div>
+
+        <!-- SLIDE 15: Footer -->
+        <div class="slide" style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <h1 style="color: white;">Je snapt x402 nu! 🎉</h1>
+            <div class="emoji">🚀 💰 ⚡</div>
+            <p style="color: white; font-size: 1.5em; margin: 30px 0;">
+                Klaar om de toekomst van internet payments te gebruiken?
+            </p>
+            <div style="background: white; color: #667eea; padding: 20px; border-radius: 15px; display: inline-block; margin-top: 30px;">
+                <p style="font-size: 1.2em; color: #667eea; margin: 0;">
+                    <strong>x402 staat klaar in je project!</strong><br>
+                    Activeer het wanneer je wilt monetizen 💎
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Smooth scroll animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const slides = document.querySelectorAll('.slide');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            slides.forEach(slide => {
+                observer.observe(slide);
+            });
+        });
+
+        // Add click to copy for code blocks
+        document.querySelectorAll('.code').forEach(block => {
+            block.style.cursor = 'pointer';
+            block.title = 'Klik om te kopiëren';
+            block.addEventListener('click', function() {
+                navigator.clipboard.writeText(this.textContent);
+                const original = this.style.background;
+                this.style.background = '#4caf50';
+                setTimeout(() => {
+                    this.style.background = original;
+                }, 300);
+            });
+        });
+    </script>
+</body>
+</html>
