@@ -24,32 +24,19 @@ if (!process.env.JWT_SECRET) {
   console.warn('⚠️  WARNING: Using random JWT secret. Set JWT_SECRET environment variable in production!');
 }
 
-// Database helper functions
+// Database helper functions (Synchronous for better-sqlite3)
 export const dbRun = (db, sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) reject(err);
-      else resolve({ id: this.lastID, changes: this.changes });
-    });
-  });
+  const stmt = db.prepare(sql);
+  const result = stmt.run(...params);
+  return { id: result.lastInsertRowid, changes: result.changes };
 };
 
 export const dbGet = (db, sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
+  return db.prepare(sql).get(...params);
 };
 
 export const dbAll = (db, sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
+  return db.prepare(sql).all(...params);
 };
 
 // Auth middleware
@@ -64,7 +51,7 @@ export const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    const session = await dbGet(
+    const session = dbGet(
       req.app.locals.db,
       'SELECT * FROM sessions WHERE token = ? AND expires_at > datetime("now")',
       [token]
@@ -74,7 +61,7 @@ export const authMiddleware = async (req, res, next) => {
       throw new Error('Session expired');
     }
 
-    const user = await dbGet(
+    const user = dbGet(
       req.app.locals.db,
       'SELECT id, email, name FROM users WHERE id = ?',
       [decoded.userId]
@@ -103,7 +90,7 @@ export const requireAuth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    const session = await dbGet(
+    const session = dbGet(
       req.app.locals.db,
       'SELECT * FROM sessions WHERE token = ? AND expires_at > datetime("now")',
       [token]
@@ -113,7 +100,7 @@ export const requireAuth = async (req, res, next) => {
       return res.status(401).json({ error: 'Session expired' });
     }
 
-    const user = await dbGet(
+    const user = dbGet(
       req.app.locals.db,
       'SELECT id, email, name FROM users WHERE id = ?',
       [decoded.userId]
@@ -135,100 +122,89 @@ export const requireAuth = async (req, res, next) => {
 export const initAuthTables = (db) => {
   console.log('Creating auth tables...');
   
-  // Users table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      name TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_login DATETIME,
-      is_active BOOLEAN DEFAULT 1
-    )
-  `, (err) => {
-    if (err) console.error('Error creating users table:', err);
-    else console.log('✅ Users table ready');
-  });
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        name TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_login DATETIME,
+        is_active BOOLEAN DEFAULT 1
+      );
 
-  // Sessions table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      token TEXT UNIQUE NOT NULL,
-      expires_at DATETIME NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT UNIQUE NOT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
 
-  // User agents table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS user_agents (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      name TEXT NOT NULL,
-      description TEXT,
-      category TEXT,
-      icon TEXT,
-      prompt TEXT,
-      key_features TEXT,
-      use_cases TEXT,
-      stats TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
+      CREATE TABLE IF NOT EXISTS user_agents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT,
+        icon TEXT,
+        prompt TEXT,
+        key_features TEXT,
+        use_cases TEXT,
+        stats TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
 
-  // User preferences table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS user_preferences (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER UNIQUE NOT NULL,
-      notification_settings TEXT,
-      dashboard_settings TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-  
-  // API keys table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS api_keys (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      key_hash TEXT UNIQUE NOT NULL,
-      key_name TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_used_at DATETIME,
-      is_active BOOLEAN DEFAULT 1,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `, (err) => {
-    if (err) console.error('Error creating api_keys table:', err);
-    else console.log('✅ API keys table ready');
-  });
+      CREATE TABLE IF NOT EXISTS user_preferences (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE NOT NULL,
+        notification_settings TEXT,
+        dashboard_settings TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+      
+      CREATE TABLE IF NOT EXISTS api_keys (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        key_hash TEXT UNIQUE NOT NULL,
+        key_name TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_used_at DATETIME,
+        is_active BOOLEAN DEFAULT 1,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+    
+    console.log('✅ Users and auth tables ready');
 
-  // Add user_id to events table if not exists
-  db.run(`
-    ALTER TABLE events ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
-  `, (err) => {
-    // Ignore error if column already exists
-    if (err && !err.message.includes('duplicate column name')) {
-      console.error('Error adding user_id to events:', err);
+    // Add user_id to events table if not exists
+    try {
+      db.prepare('ALTER TABLE events ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL').run();
+    } catch (err) {
+      // Ignore error if column already exists
+      if (!err.message.includes('duplicate column name')) {
+        // console.error('Error adding user_id to events:', err);
+      }
     }
-  });
 
-  // Create indexes
-  db.run('CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_user_agents_user_id ON user_agents(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id)');
+    // Create indexes
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+      CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_user_agents_user_id ON user_agents(user_id);
+      CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id);
+    `);
 
-  console.log('✅ Auth tables initialized');
+    console.log('✅ Auth tables initialized');
+  } catch (error) {
+    console.error('Error initializing auth tables:', error);
+  }
 };
 
 // Auth routes

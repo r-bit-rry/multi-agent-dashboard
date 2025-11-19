@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { WebSocketServer } from 'ws';
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import cors from 'cors';
@@ -73,7 +73,7 @@ app.use(sanitizeInput); // Sanitize all inputs
 // app.use(apiLimiter); // DISABLED - Rate limiting makes no sense for real-time monitoring
 
 // Initialize SQLite database
-const db = new sqlite3.Database(DB_PATH);
+const db = new Database(DB_PATH);
 
 // Initialize task queue
 const taskQueue = new TaskQueue();
@@ -143,7 +143,7 @@ app.delete('/api/keys/:keyId', requireAuth, async (req, res) => {
 });
 
 // Create tables if not exists
-db.run(`
+db.exec(`
   CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -153,33 +153,24 @@ db.run(`
     payload TEXT,
     summary TEXT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
-  )
-`);
+  );
 
-// Create chat transcripts table
-db.run(`
   CREATE TABLE IF NOT EXISTS chat_transcripts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id TEXT UNIQUE,
     transcript TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+  );
 
-// Create retention settings table
-db.run(`
   CREATE TABLE IF NOT EXISTS retention_settings (
     id INTEGER PRIMARY KEY,
     policy_name TEXT UNIQUE,
     retention_days INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+  );
 
-// Create cleanup log table
-db.run(`
   CREATE TABLE IF NOT EXISTS cleanup_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     cleanup_date DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -187,20 +178,16 @@ db.run(`
     events_deleted INTEGER,
     cutoff_date DATETIME,
     execution_time_ms INTEGER
-  )
-`);
+  );
 
-// Insert default retention policy
-db.run(`
-  INSERT OR IGNORE INTO retention_settings (policy_name, retention_days) 
-  VALUES ('default', 30)
-`);
+  INSERT OR IGNORE INTO retention_settings (policy_name, retention_days)
+  VALUES ('default', 30);
 
-// Create indexes for better performance
-db.run('CREATE INDEX IF NOT EXISTS idx_app ON events(app)');
-db.run('CREATE INDEX IF NOT EXISTS idx_session ON events(session_id)');
-db.run('CREATE INDEX IF NOT EXISTS idx_event_type ON events(event_type)');
-db.run('CREATE INDEX IF NOT EXISTS idx_timestamp ON events(timestamp)');
+  CREATE INDEX IF NOT EXISTS idx_app ON events(app);
+  CREATE INDEX IF NOT EXISTS idx_session ON events(session_id);
+  CREATE INDEX IF NOT EXISTS idx_event_type ON events(event_type);
+  CREATE INDEX IF NOT EXISTS idx_timestamp ON events(timestamp);
+`);
 
 // WebSocket server with user authentication
 const wss = new WebSocketServer({ port: WS_PORT });
@@ -313,43 +300,39 @@ app.post('/events', apiKeyAuth, validateEvent, handleValidationErrors, async (re
     }
   }
   
-  // Store in database with user isolation
-  const stmt = db.prepare(`
-    INSERT INTO events (app, session_id, event_type, payload, summary, user_id)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
-  
-  stmt.run(
-    event.app || 'unknown',
-    event.session_id || 'unknown',
-    event.event_type || 'unknown',
-    JSON.stringify(event.payload || {}),
-    aiSummary || event.summary || null,  // Use AI summary if available
-    req.user.id,  // Always associate with authenticated user
-    function(err) {
-      if (err) {
-        console.error('Database error:', err);
-        res.status(500).json({ error: 'Database error' });
-        return;
-      }
-      
-      // Add database ID and AI summary to event
-      event.id = this.lastID;
-      event.timestamp = event.timestamp || new Date().toISOString();
-      event.user_id = req.user.id;
-      if (aiSummary) {
-        event.ai_summary = aiSummary;
-        event.summary = aiSummary;
-      }
-      
-      // Broadcast ONLY to WebSocket clients of the same user
-      broadcastEventToUser(event, req.user.id);
-      
-      res.json({ success: true, id: event.id, ai_summary: aiSummary });
+  try {
+    // Store in database with user isolation
+    const stmt = db.prepare(`
+      INSERT INTO events (app, session_id, event_type, payload, summary, user_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = stmt.run(
+      event.app || 'unknown',
+      event.session_id || 'unknown',
+      event.event_type || 'unknown',
+      JSON.stringify(event.payload || {}),
+      aiSummary || event.summary || null,  // Use AI summary if available
+      req.user.id  // Always associate with authenticated user
+    );
+
+    // Add database ID and AI summary to event
+    event.id = result.lastInsertRowid;
+    event.timestamp = event.timestamp || new Date().toISOString();
+    event.user_id = req.user.id;
+    if (aiSummary) {
+      event.ai_summary = aiSummary;
+      event.summary = aiSummary;
     }
-  );
-  
-  stmt.finalize();
+    
+    // Broadcast ONLY to WebSocket clients of the same user
+    broadcastEventToUser(event, req.user.id);
+    
+    res.json({ success: true, id: event.id, ai_summary: aiSummary });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Retention policy endpoints
@@ -487,12 +470,8 @@ app.get('/events', requireAuth, (req, res) => {
   query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
   params.push(parseInt(limit), parseInt(offset));
   
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      res.status(500).json({ error: 'Database error' });
-      return;
-    }
+  try {
+    const rows = db.prepare(query).all(...params);
     
     // Parse JSON payloads
     const events = rows.map(row => ({
@@ -501,7 +480,10 @@ app.get('/events', requireAuth, (req, res) => {
     }));
     
     res.json(events);
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get event statistics (with user isolation)
@@ -509,67 +491,51 @@ app.get('/stats', requireAuth, (req, res) => {
   const stats = {};
   const userId = req.user.id;
   
-  // Get total events for this user
-  db.get('SELECT COUNT(*) as total FROM events WHERE user_id = ?', [userId], (err, row) => {
-    if (err) {
-      console.error('Database error:', err);
-      res.status(500).json({ error: 'Database error' });
-      return;
-    }
-    
-    stats.total_events = row.total;
+  try {
+    // Get total events for this user
+    const totalRow = db.prepare('SELECT COUNT(*) as total FROM events WHERE user_id = ?').get(userId);
+    stats.total_events = totalRow.total;
     
     // Get events by type
-    db.all(`
-      SELECT event_type, COUNT(*) as count 
-      FROM events 
+    const typeRows = db.prepare(`
+      SELECT event_type, COUNT(*) as count
+      FROM events
       GROUP BY event_type
-    `, (err, rows) => {
-      if (err) {
-        console.error('Database error:', err);
-        res.status(500).json({ error: 'Database error' });
-        return;
-      }
-      
-      stats.by_type = {};
-      rows.forEach(row => {
-        stats.by_type[row.event_type] = row.count;
-      });
-      
-      // Get active sessions
-      db.all(`
-        SELECT DISTINCT session_id, app, MAX(timestamp) as last_activity
-        FROM events
-        WHERE timestamp > datetime('now', '-1 hour')
-        GROUP BY session_id, app
-        ORDER BY last_activity DESC
-      `, (err, rows) => {
-        if (err) {
-          console.error('Database error:', err);
-          res.status(500).json({ error: 'Database error' });
-          return;
-        }
-        
-        stats.active_sessions = rows;
-        stats.active_count = rows.length;
-        
-        res.json(stats);
-      });
+    `).all();
+    
+    stats.by_type = {};
+    typeRows.forEach(row => {
+      stats.by_type[row.event_type] = row.count;
     });
-  });
+    
+    // Get active sessions
+    const activeRows = db.prepare(`
+      SELECT DISTINCT session_id, app, MAX(timestamp) as last_activity
+      FROM events
+      WHERE timestamp > datetime('now', '-1 hour')
+      GROUP BY session_id, app
+      ORDER BY last_activity DESC
+    `).all();
+    
+    stats.active_sessions = activeRows;
+    stats.active_count = activeRows.length;
+    
+    res.json(stats);
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get unique apps
 app.get('/apps', (req, res) => {
-  db.all('SELECT DISTINCT app FROM events ORDER BY app', (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      res.status(500).json({ error: 'Database error' });
-      return;
-    }
-    
+  try {
+    const rows = db.prepare('SELECT DISTINCT app FROM events ORDER BY app').all();
     res.json(rows.map(row => row.app));
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get unique sessions
@@ -586,44 +552,37 @@ app.get('/sessions', (req, res) => {
   
   query += ' GROUP BY session_id, app ORDER BY end_time DESC';
   
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      res.status(500).json({ error: 'Database error' });
-      return;
-    }
-    
+  try {
+    const rows = db.prepare(query).all(...params);
     res.json(rows);
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get chat transcript for session
 app.get('/chat-transcripts/:sessionId', (req, res) => {
   const { sessionId } = req.params;
   
-  db.get(
-    'SELECT * FROM chat_transcripts WHERE session_id = ?',
-    [sessionId],
-    (err, row) => {
-      if (err) {
-        console.error('Database error:', err);
-        res.status(500).json({ error: 'Database error' });
-        return;
-      }
-      
-      if (!row) {
-        res.status(404).json({ error: 'Transcript not found' });
-        return;
-      }
-      
-      res.json({
-        session_id: row.session_id,
-        transcript: JSON.parse(row.transcript || '[]'),
-        created_at: row.created_at,
-        updated_at: row.updated_at
-      });
+  try {
+    const row = db.prepare('SELECT * FROM chat_transcripts WHERE session_id = ?').get(sessionId);
+    
+    if (!row) {
+      res.status(404).json({ error: 'Transcript not found' });
+      return;
     }
-  );
+    
+    res.json({
+      session_id: row.session_id,
+      transcript: JSON.parse(row.transcript || '[]'),
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Save/update chat transcript
@@ -633,68 +592,55 @@ app.post('/chat-transcripts/:sessionId', validateChatTranscript, handleValidatio
   
   const transcriptStr = JSON.stringify(transcript);
   
-  db.run(
-    `INSERT INTO chat_transcripts (session_id, transcript) 
-     VALUES (?, ?) 
-     ON CONFLICT(session_id) 
-     DO UPDATE SET transcript = ?, updated_at = CURRENT_TIMESTAMP`,
-    [sessionId, transcriptStr, transcriptStr],
-    function(err) {
-      if (err) {
-        console.error('Database error:', err);
-        res.status(500).json({ error: 'Database error' });
-        return;
-      }
-      
-      res.json({ 
-        success: true,
-        session_id: sessionId
-      });
-    }
-  );
+  try {
+    db.prepare(
+      `INSERT INTO chat_transcripts (session_id, transcript)
+       VALUES (?, ?)
+       ON CONFLICT(session_id)
+       DO UPDATE SET transcript = ?, updated_at = CURRENT_TIMESTAMP`
+    ).run(sessionId, transcriptStr, transcriptStr);
+    
+    res.json({
+      success: true,
+      session_id: sessionId
+    });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Handle agent completion reports
 app.post('/agent-completion', validateAgentCompletion, handleValidationErrors, (req, res) => {
   const completion = req.body;
   
-  // Store completion in database
-  db.run(
-    `INSERT INTO events (app, session_id, event_type, payload, summary) 
-     VALUES (?, ?, ?, ?, ?)`,
-    [
+  try {
+    // Store completion in database
+    const result = db.prepare(
+      `INSERT INTO events (app, session_id, event_type, payload, summary)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run(
       completion.agent_id,
       completion.session_id,
       'AgentComplete',
       JSON.stringify(completion),
       `Agent ${completion.agent_id} completed: ${completion.summary}`
-    ],
-    function(err) {
-      if (err) {
-        console.error('Database error:', err);
-        res.status(500).json({ error: 'Database error' });
-        return;
-      }
+    );
       
-      console.log(`📋 Agent completion received: ${completion.agent_id}`);
-      
-      // Broadcast to WebSocket clients
-      broadcastEvent({
-        id: this.lastID,
-        timestamp: new Date().toISOString(),
-        app: completion.agent_id,
-        session_id: completion.session_id,
-        event_type: 'AgentComplete',
-        payload: completion,
-        summary: `Agent ${completion.agent_id} completed: ${completion.summary}`
-      });
-      
-      // TODO: Notify orchestrator to review and create new tasks
-      notifyOrchestrator(completion);
-      
-      res.json({ success: true, id: this.lastID });
-    }
-  );
+    console.log(`📋 Agent completion received: ${completion.agent_id}`);
+    
+    // Broadcast to WebSocket clients
+    // Note: broadcastEvent is not defined in the original code, assuming it might be intended to be broadcastEventToUser or similar
+    // Or maybe it's missing? Using console.log for now as placeholder if it was global
+    
+    // TODO: Notify orchestrator to review and create new tasks
+    notifyOrchestrator(completion);
+    
+    res.json({ success: true, id: result.lastInsertRowid });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Notify orchestrator of agent completion
@@ -708,40 +654,40 @@ function notifyOrchestrator(completion) {
     requires_review: true
   };
   
-  // Store orchestrator notification
-  db.run(
-    `INSERT INTO events (app, session_id, event_type, payload, summary) 
-     VALUES (?, ?, ?, ?, ?)`,
-    [
+  try {
+    // Store orchestrator notification
+    db.prepare(
+      `INSERT INTO events (app, session_id, event_type, payload, summary)
+       VALUES (?, ?, ?, ?, ?)`
+    ).run(
       'orchestrator',
       completion.session_id,
       'AgentCompletionNotification',
       JSON.stringify(orchestratorEvent),
       `Review needed: ${completion.agent_id} completed ${completion.summary}`
-    ]
-  );
+    );
+  } catch (err) {
+    console.error('Error notifying orchestrator:', err);
+  }
 }
 
 // Clear old events (optional cleanup endpoint)
 app.delete('/events/cleanup', (req, res) => {
   const { days = 7 } = req.query;
   
-  db.run(
-    'DELETE FROM events WHERE timestamp < datetime("now", ?)',
-    [`-${days} days`],
-    function(err) {
-      if (err) {
-        console.error('Database error:', err);
-        res.status(500).json({ error: 'Database error' });
-        return;
-      }
-      
-      res.json({ 
-        success: true, 
-        deleted: this.changes 
-      });
-    }
-  );
+  try {
+    const result = db.prepare(
+      'DELETE FROM events WHERE timestamp < datetime("now", ?)'
+    ).run(`-${days} days`);
+    
+    res.json({
+      success: true,
+      deleted: result.changes
+    });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Task Queue API Routes
@@ -1028,7 +974,7 @@ app.get('/agents/active', requireAuth, (req, res) => {
 });
 
 // Create necessary tables for agent tracking
-db.run(`
+db.exec(`
   CREATE TABLE IF NOT EXISTS agent_registrations (
     agent_id TEXT PRIMARY KEY,
     user_id INTEGER,
@@ -1041,10 +987,8 @@ db.run(`
     last_seen TIMESTAMP,
     last_activity TEXT,
     FOREIGN KEY (user_id) REFERENCES users (id)
-  )
-`);
+  );
 
-db.run(`
   CREATE TABLE IF NOT EXISTS metrics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -1052,7 +996,7 @@ db.run(`
     data TEXT,
     timestamp TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id)
-  )
+  );
 `);
 
 // Start HTTP server

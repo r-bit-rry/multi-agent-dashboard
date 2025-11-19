@@ -44,7 +44,8 @@ export async function verifyApiKey(db, apiKey) {
   const hashedKey = hashApiKey(apiKey);
   
   const stmt = db.prepare(`
-    SELECT ak.*, u.* 
+    SELECT ak.id as api_key_id, ak.key_name, ak.user_id,
+           u.email, u.name
     FROM api_keys ak
     JOIN users u ON ak.user_id = u.id
     WHERE ak.key_hash = ? AND ak.is_active = 1
@@ -54,7 +55,7 @@ export async function verifyApiKey(db, apiKey) {
   
   if (result) {
     // Update last used timestamp
-    db.prepare('UPDATE api_keys SET last_used_at = datetime("now") WHERE id = ?').run(result.id);
+    db.prepare('UPDATE api_keys SET last_used_at = datetime("now") WHERE id = ?').run(result.api_key_id);
     
     return {
       user: {
@@ -63,7 +64,7 @@ export async function verifyApiKey(db, apiKey) {
         name: result.name
       },
       apiKey: {
-        id: result.id,
+        id: result.api_key_id,
         name: result.key_name
       }
     };
@@ -87,8 +88,8 @@ export async function listApiKeys(db, userId) {
 // Revoke API key
 export async function revokeApiKey(db, userId, keyId) {
   const stmt = db.prepare(`
-    UPDATE api_keys 
-    SET is_active = 0 
+    UPDATE api_keys
+    SET is_active = 0
     WHERE id = ? AND user_id = ?
   `);
   

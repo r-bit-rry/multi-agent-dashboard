@@ -112,31 +112,24 @@ function fallbackSummary(events) {
  * Generate summary for Stop event
  */
 export async function generateStopEventSummary(sessionId, db) {
-  return new Promise((resolve, reject) => {
+  try {
     // Get all events for this session
-    db.all(
-      `SELECT * FROM events 
-       WHERE session_id = ? 
-       ORDER BY timestamp ASC`,
-      [sessionId],
-      async (err, events) => {
-        if (err) {
-          console.error('Error fetching session events:', err);
-          resolve('Task completed.');
-          return;
-        }
+    const events = db.prepare(
+      `SELECT * FROM events
+       WHERE session_id = ?
+       ORDER BY timestamp ASC`
+    ).all(sessionId);
 
-        if (!events || events.length === 0) {
-          resolve('Task completed with no recorded actions.');
-          return;
-        }
+    if (!events || events.length === 0) {
+      return 'Task completed with no recorded actions.';
+    }
 
-        // Generate summary
-        const summary = await generateTaskSummary(events, sessionId);
-        resolve(summary);
-      }
-    );
-  });
+    // Generate summary
+    return await generateTaskSummary(events, sessionId);
+  } catch (err) {
+    console.error('Error fetching session events:', err);
+    return 'Task completed.';
+  }
 }
 
 export default {

@@ -1,4 +1,4 @@
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,12 +7,12 @@ const __dirname = dirname(__filename);
 
 class TaskQueue {
   constructor() {
-    this.db = new sqlite3.Database(join(__dirname, 'tasks.db'));
+    this.db = new Database(join(__dirname, 'tasks.db'));
     this.initDatabase();
   }
 
   initDatabase() {
-    this.db.run(`
+    this.db.exec(`
       CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         agent_id TEXT NOT NULL,
@@ -35,138 +35,97 @@ class TaskQueue {
     `);
 
     // Create indexes
-    this.db.run('CREATE INDEX IF NOT EXISTS idx_agent_status ON tasks(agent_id, status)');
-    this.db.run('CREATE INDEX IF NOT EXISTS idx_priority ON tasks(priority DESC, created_at)');
+    this.db.exec('CREATE INDEX IF NOT EXISTS idx_agent_status ON tasks(agent_id, status)');
+    this.db.exec('CREATE INDEX IF NOT EXISTS idx_priority ON tasks(priority DESC, created_at)');
   }
 
   // Add a new task
   async addTask(task) {
-    return new Promise((resolve, reject) => {
-      const stmt = this.db.prepare(`
-        INSERT INTO tasks (agent_id, session_id, task_type, priority, title, description, context)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
-      
-      stmt.run(
-        task.agent_id,
-        task.session_id || null,
-        task.task_type,
-        task.priority || 5,
-        task.title,
-        task.description || null,
-        JSON.stringify(task.context || {}),
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.lastID);
-        }
-      );
-      
-      stmt.finalize();
-    });
+    const stmt = this.db.prepare(`
+      INSERT INTO tasks (agent_id, session_id, task_type, priority, title, description, context)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = stmt.run(
+      task.agent_id,
+      task.session_id || null,
+      task.task_type,
+      task.priority || 5,
+      task.title,
+      task.description || null,
+      JSON.stringify(task.context || {})
+    );
+    
+    return result.lastInsertRowid;
   }
 
   // Get next task for an agent
   async getNextTask(agentId) {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        `SELECT * FROM tasks 
-         WHERE agent_id = ? 
-         AND status = 'pending' 
-         ORDER BY priority DESC, created_at ASC 
-         LIMIT 1`,
-        [agentId],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row ? this.parseTask(row) : null);
-        }
-      );
-    });
+    const row = this.db.prepare(
+      `SELECT * FROM tasks
+       WHERE agent_id = ?
+       AND status = 'pending'
+       ORDER BY priority DESC, created_at ASC
+       LIMIT 1`
+    ).get(agentId);
+    
+    return row ? this.parseTask(row) : null;
   }
 
   // Start a task
   async startTask(taskId, sessionId) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        `UPDATE tasks 
-         SET status = 'in_progress', 
-             started_at = CURRENT_TIMESTAMP,
-             session_id = ?
-         WHERE id = ?`,
-        [sessionId, taskId],
-        (err) => {
-          if (err) reject(err);
-          else resolve();
-        }
-      );
-    });
+    this.db.prepare(
+      `UPDATE tasks
+       SET status = 'in_progress',
+           started_at = CURRENT_TIMESTAMP,
+           session_id = ?
+       WHERE id = ?`
+    ).run(sessionId, taskId);
   }
 
   // Complete a task
   async completeTask(taskId, result) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        `UPDATE tasks 
-         SET status = 'completed', 
-             completed_at = CURRENT_TIMESTAMP,
-             result = ?
-         WHERE id = ?`,
-        [JSON.stringify(result), taskId],
-        (err) => {
-          if (err) reject(err);
-          else resolve();
-        }
-      );
-    });
+    this.db.prepare(
+      `UPDATE tasks
+       SET status = 'completed',
+           completed_at = CURRENT_TIMESTAMP,
+           result = ?
+       WHERE id = ?`
+    ).run(JSON.stringify(result), taskId);
   }
 
   // Fail a task
   async failTask(taskId, error) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        `UPDATE tasks 
-         SET status = 'failed', 
-             error = ?,
-             retry_count = retry_count + 1
-         WHERE id = ?`,
-        [error, taskId],
-        (err) => {
-          if (err) reject(err);
-          else resolve();
-        }
-      );
-    });
+    this.db.prepare(
+      `UPDATE tasks
+       SET status = 'failed',
+       error = ?,
+       retry_count = retry_count + 1
+       WHERE id = ?`
+    ).run(error, taskId);
   }
 
   // Get agent's task history
   async getTaskHistory(agentId, limit = 100) {
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        `SELECT * FROM tasks 
-         WHERE agent_id = ? 
-         ORDER BY created_at DESC 
-         LIMIT ?`,
-        [agentId, limit],
-        (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows.map(row => this.parseTask(row)));
-        }
-      );
-    });
+    const rows = this.db.prepare(
+      `SELECT * FROM tasks
+       WHERE agent_id = ?
+       ORDER BY created_at DESC
+       LIMIT ?`
+    ).all(agentId, limit);
+    
+    return rows.map(row => this.parseTask(row));
   }
 
   // Get active tasks across all agents
   async getActiveTasks() {
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        `SELECT * FROM tasks 
-         WHERE status = 'in_progress' 
-         ORDER BY started_at DESC`,
-        (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows.map(row => this.parseTask(row)));
-        }
-      );
-    });
+    const rows = this.db.prepare(
+      `SELECT * FROM tasks
+       WHERE status = 'in_progress'
+       ORDER BY started_at DESC`
+    ).all();
+    
+    return rows.map(row => this.parseTask(row));
   }
 
   // Generate new tasks based on analysis
@@ -236,23 +195,16 @@ class TaskQueue {
 
   // Get task statistics
   async getStats(agentId) {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        `SELECT 
-          COUNT(*) as total,
-          COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-          COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed,
-          COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-          COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress
-         FROM tasks 
-         WHERE agent_id = ?`,
-        [agentId],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        }
-      );
-    });
+    return this.db.prepare(
+      `SELECT
+        COUNT(*) as total,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
+        COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress
+       FROM tasks
+       WHERE agent_id = ?`
+    ).get(agentId);
   }
 }
 
